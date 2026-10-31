@@ -19,6 +19,7 @@
 				Core/G2048GameEngine.m,
 				Core/G2048GridPosition.m,
 				Core/G2048TileNode.m,
+				Scenes/G2048GameOverScene.m,
 				Scenes/G2048GameScene.m,
 			);
 			target = 5792460930955CA800E4BA73 /* 2048 iOS */;

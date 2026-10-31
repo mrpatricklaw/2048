@@ -6,6 +6,7 @@
 //
 #import "G2048GameScene.h"
 #import "G2048TileNode.h"
+#import "G2048GameOverScene.h"
 
 @interface G2048GameScene () {
     G2048TileNode *_renderedGrid[4][4];
@@ -145,7 +146,11 @@
 
 
 - (void)executeBoardShiftInDirection:(G2048MigrationDirection)direction {
-    
+    if (self.gameEngine.isBoardLocked) {
+        [self handleSceneTransitionToGameOver];
+        return;
+    }
+
     NSMutableDictionary<G2048GridPosition *, G2048TileNode *> *collisionCleanupRegistry = [NSMutableDictionary dictionary];
     
     BOOL actionWasTaken = [self.gameEngine processSwipeInDirection:direction onTileDisplacement:^(G2048GridPosition *sourcePosition, G2048GridPosition *destinationPosition) {
@@ -184,8 +189,26 @@
         [self runAction:[SKAction sequence:@[[SKAction waitForDuration:0.15], [SKAction runBlock:^{
             [self introduceNewRandomTile];
             [self updateScoreDisplay:self.gameEngine.currentScore];
+            // Check state conditions after all slide visual layers have finished parsing
+            if (self.gameEngine.isBoardLocked) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self handleSceneTransitionToGameOver];
+                });
+            }
         }]]]];
     }
+}
+
+- (void)handleSceneTransitionToGameOver {
+    if (self.isTransitioningToGameOver || !self.view) return;
+    self.isTransitioningToGameOver = YES;
+    
+    G2048GameOverScene *gameOverSceneInstance = [[G2048GameOverScene alloc] initWithSize:self.size
+                                                                              finalScore:self.gameEngine.currentScore];
+    gameOverSceneInstance.scaleMode = self.scaleMode;
+    
+    SKTransition *fadeTransition = [SKTransition fadeWithColor:self.backgroundColor duration:0.60];
+    [self.view presentScene:gameOverSceneInstance transition:fadeTransition];
 }
 
 @end
